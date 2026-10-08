@@ -3,13 +3,13 @@
  * MKM Domains Registrar Adapter for FOSSBilling
  * File: src/library/Registrar/Adapter/Mkmdomains.php
  * Class: Registrar_Adapter_Mkmdomains
- * API:  https://mkm.fan/system/registry.php  (registry v2 / v2.1 / v2.2)
+ * API:  https://mkm.fan/system/registry.php  (API v2 / v2.1 / v2.2)
  *
  * Works for ANY reseller FOSSBilling install (MKM's own billing, Hostingo,
  * or any future reseller): endpoint + API key are configured per install.
- * Works for ANY zone of the MKM registry (mkm.fan, oya.to, gitapp.si, ...)
+ * Works for ANY zone of MKM Domains (mkm.fan and future zones)
  * - the zone is taken from the domain TLD automatically, so adding a new
- * zone later only requires a new TLD in FOSSBilling + registry permission.
+ * zone later only requires a new TLD in FOSSBilling + a zone approval on your key.
  */
 
 class Registrar_Adapter_Mkmdomains extends Registrar_AdapterAbstract
@@ -32,7 +32,7 @@ class Registrar_Adapter_Mkmdomains extends Registrar_AdapterAbstract
     public static function getConfig(): array
     {
         return [
-            'label' => 'MKM Domains (registry zones: mkm.fan, oya.to, gitapp.si, ...)',
+            'label' => 'MKM Domains',
             'form'  => [
                 'api_endpoint' => ['text', [
                     'label'       => 'API Endpoint',
@@ -40,7 +40,7 @@ class Registrar_Adapter_Mkmdomains extends Registrar_AdapterAbstract
                 ]],
                 'api_key' => ['password', [
                     'label'       => 'API Key',
-                    'description' => 'The mkm_live_... / mkm_admin_... key issued for this reseller (MKM Domains registry)',
+                    'description' => 'The mkm_live_... / mkm_admin_... key issued for this reseller (MKM Domains)',
                     'secret'      => true,
                 ]],
                 'default_ns1' => ['text', ['label' => 'Default Nameserver 1']],
@@ -115,7 +115,7 @@ class Registrar_Adapter_Mkmdomains extends Registrar_AdapterAbstract
 
     public function isDomaincanBeTransferred(Registrar_Domain $domain)
     {
-        return false; // transfers do not apply to this subdomain registry
+        return false; // transfers do not apply to these subdomain zones
     }
 
     // ─────────────────────────────────────────
@@ -139,7 +139,7 @@ class Registrar_Adapter_Mkmdomains extends Registrar_AdapterAbstract
             $payload['dns_mode']     = 'ns';
             $payload['target_value'] = $domain->getNs1();
         } else {
-            // otherwise the registry's internal DNS is used
+            // otherwise MKM Domains DNS is used
             $payload['dns_mode']     = 'internal';
             $payload['target_value'] = null;
         }
@@ -182,7 +182,7 @@ class Registrar_Adapter_Mkmdomains extends Registrar_AdapterAbstract
 
     public function transferDomain(Registrar_Domain $domain)
     {
-        // a subdomain "transfer" = registering it again in the same registry (if available)
+        // a subdomain "transfer" = registering it again (if available)
         return $this->registerDomain($domain);
     }
 
@@ -197,7 +197,7 @@ class Registrar_Adapter_Mkmdomains extends Registrar_AdapterAbstract
             'zone'   => $this->_zone($domain),
         ]);
         if (empty($r['registered'])) {
-            throw new Registrar_Exception('MKM Domains: domain not found in registry');
+            throw new Registrar_Exception('MKM Domains: domain not found');
         }
         $rec = $r['record'] ?? [];
 
@@ -234,12 +234,12 @@ class Registrar_Adapter_Mkmdomains extends Registrar_AdapterAbstract
 
     public function modifyContact(Registrar_Domain $domain)
     {
-        // FOSSBilling keeps the contact details in its own DB - no need to send them to the registry
+        // FOSSBilling keeps the contact details in its own DB - no need to send them to MKM Domains
         return true;
     }
 
     // ─────────────────────────────────────────
-    // Not-applicable features (subdomain registry)
+    // Not-applicable features (subdomain zones)
     // ─────────────────────────────────────────
     public function getEpp(Registrar_Domain $domain)
     {
@@ -258,7 +258,7 @@ class Registrar_Adapter_Mkmdomains extends Registrar_AdapterAbstract
 
     public function lock(Registrar_Domain $domain)
     {
-        return true; // managed from the registry panel
+        return true; // managed from the MKM Domains panel
     }
 
     public function unlock(Registrar_Domain $domain)
